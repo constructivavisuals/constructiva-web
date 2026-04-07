@@ -31,6 +31,21 @@ function useSmoothScroll() {
   }, []);
 }
 
+// Breakpoint hook — mobile-first responsive
+function useBreakpoint() {
+  const [bp, setBp] = useState({ isMobile: false, isTablet: false });
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      setBp({ isMobile: w < 768, isTablet: w >= 768 && w < 1024 });
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return bp;
+}
+
 // Intersection Observer hook
 function useInView(threshold = 0.2): [React.RefObject<HTMLElement | null>, boolean] {
   const ref = useRef<HTMLElement | null>(null);
@@ -174,12 +189,21 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
 // ============================================================
 function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { isMobile } = useBreakpoint();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > window.innerHeight * 3);
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [menuOpen]);
 
   const links = [
     { label: "Proces", id: "process" },
@@ -198,8 +222,10 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
           left: 0,
           right: 0,
           zIndex: 100,
-          padding: scrolled ? "10px 48px" : "16px 48px",
-          background: scrolled ? "rgba(21,42,62,0.95)" : "transparent",
+          padding: isMobile
+            ? (scrolled ? "10px 20px" : "14px 20px")
+            : (scrolled ? "10px 48px" : "16px 48px"),
+          background: scrolled || (isMobile && menuOpen) ? "rgba(21,42,62,0.95)" : "transparent",
           backdropFilter: scrolled ? "blur(20px)" : "none",
           borderBottom: scrolled
             ? `1px solid ${COLORS.navyLight}`
@@ -224,7 +250,34 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
           />
         </div>
 
+        {/* Mobile hamburger button */}
+        {isMobile && (
+          <button
+            aria-label={menuOpen ? "Zavřít menu" : "Otevřít menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+            style={{
+              width: 44,
+              height: 44,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 5,
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            <span style={{ display: "block", width: 22, height: 2, background: COLORS.white, transition: "transform 0.3s ease", transform: menuOpen ? "translateY(7px) rotate(45deg)" : "none" }} />
+            <span style={{ display: "block", width: 22, height: 2, background: COLORS.white, opacity: menuOpen ? 0 : 1, transition: "opacity 0.2s ease" }} />
+            <span style={{ display: "block", width: 22, height: 2, background: COLORS.white, transition: "transform 0.3s ease", transform: menuOpen ? "translateY(-7px) rotate(-45deg)" : "none" }} />
+          </button>
+        )}
+
         {/* Desktop links */}
+        {!isMobile && (
         <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
           {links.map((l) => (
             <span
@@ -280,9 +333,71 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
             Klientský portál
           </a>
         </div>
+        )}
       </nav>
 
-      {/* Current Project Widget — floating, bottom-right */}
+      {/* Mobile fullscreen menu */}
+      {isMobile && menuOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 99,
+            background: "rgba(13,31,45,0.98)",
+            backdropFilter: "blur(20px)",
+            paddingTop: 80,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 28,
+          }}
+        >
+          {links.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => { setMenuOpen(false); scrollTo(l.id); }}
+              style={{
+                fontFamily: FONT,
+                fontSize: 22,
+                letterSpacing: 2,
+                fontWeight: 500,
+                color: COLORS.white,
+                textTransform: "uppercase",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "12px 20px",
+                minHeight: 44,
+              }}
+            >
+              {l.label}
+            </button>
+          ))}
+          <a
+            href="https://constructiva-portal.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setMenuOpen(false)}
+            style={{
+              fontFamily: FONT,
+              fontSize: 13,
+              letterSpacing: 2,
+              fontWeight: 600,
+              textTransform: "uppercase",
+              padding: "16px 36px",
+              background: COLORS.accent,
+              color: COLORS.navy,
+              textDecoration: "none",
+              marginTop: 16,
+            }}
+          >
+            Klientský portál
+          </a>
+        </div>
+      )}
+
+      {/* Current Project Widget — floating, bottom-right (desktop only) */}
+      {!isMobile && (
       <div
         style={{
           position: "fixed",
@@ -355,6 +470,7 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
           Havlíčkův Brod — Vysočina
         </div>
       </div>
+      )}
     </>
   );
 }
@@ -375,6 +491,7 @@ function frameSrc(index: number) {
 }
 
 function HeroSection() {
+  const { isMobile } = useBreakpoint();
   const [activePhase, setActivePhase] = useState(0);
   const [progress, setProgress] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
@@ -543,7 +660,7 @@ function HeroSection() {
 
         {/* Phase label — bottom left (visible from 20%) */}
         {showLabels && (
-          <div style={{ position: "absolute", left: 48, bottom: 120, zIndex: 10, opacity: labelsOpacity, transition: "opacity 0.3s ease" }}>
+          <div style={{ position: "absolute", left: isMobile ? 20 : 48, right: isMobile ? 20 : "auto", bottom: isMobile ? 90 : 120, zIndex: 10, opacity: labelsOpacity, transition: "opacity 0.3s ease" }}>
             <div
               style={{
                 fontSize: 10,
@@ -559,7 +676,7 @@ function HeroSection() {
             </div>
             <div
               style={{
-                fontSize: 48,
+                fontSize: isMobile ? 30 : 48,
                 fontWeight: 700,
                 color: COLORS.white,
                 fontFamily: FONT,
@@ -571,7 +688,7 @@ function HeroSection() {
             </div>
             <div
               style={{
-                fontSize: 16,
+                fontSize: isMobile ? 14 : 16,
                 color: COLORS.grey,
                 fontFamily: FONT,
                 fontWeight: 400,
@@ -583,8 +700,8 @@ function HeroSection() {
           </div>
         )}
 
-        {/* Progress bar — right side (visible from 20%) */}
-        {showLabels && (
+        {/* Progress bar — right side (desktop only, visible from 20%) */}
+        {showLabels && !isMobile && (
           <div
             style={{
               position: "absolute",
@@ -679,8 +796,9 @@ function HeroSection() {
         <div
           style={{
             position: "absolute",
-            top: 120,
-            left: 48,
+            top: isMobile ? 100 : 120,
+            left: isMobile ? 20 : 48,
+            right: isMobile ? 20 : "auto",
             zIndex: 10,
             opacity: headlineOpacity,
             transition: "opacity 0.15s linear",
@@ -689,7 +807,7 @@ function HeroSection() {
           <div
             style={{
               fontFamily: FONT,
-              fontSize: 64,
+              fontSize: isMobile ? 36 : 64,
               fontWeight: 300,
               color: COLORS.white,
               lineHeight: 1.15,
@@ -705,10 +823,10 @@ function HeroSection() {
           <div
             style={{
               fontFamily: FONT,
-              fontSize: 19,
+              fontSize: isMobile ? 14 : 19,
               fontWeight: 400,
               color: COLORS.white,
-              marginTop: 24,
+              marginTop: isMobile ? 16 : 24,
               maxWidth: 440,
               lineHeight: 1.7,
               opacity: coverOpacity,
@@ -728,6 +846,7 @@ function HeroSection() {
 // SCROLL STORYTELLING — Process Wipe Section
 // ============================================================
 function ProcessSection() {
+  const { isMobile } = useBreakpoint();
   const sectionRef = useRef<HTMLElement>(null);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -797,11 +916,11 @@ function ProcessSection() {
         }}
       >
         {/* Section label */}
-        <div style={{ position: "absolute", top: 120, left: 48, zIndex: 10 }}>
+        <div style={{ position: "absolute", top: isMobile ? 90 : 120, left: isMobile ? 20 : 48, right: isMobile ? 20 : "auto", zIndex: 10 }}>
           <div
             style={{
               fontFamily: FONT,
-              fontSize: 42,
+              fontSize: isMobile ? 26 : 42,
               fontWeight: 700,
               color: COLORS.navy,
               lineHeight: 1.2,
@@ -837,20 +956,21 @@ function ProcessSection() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "120px 48px 48px",
+              padding: isMobile ? "150px 20px 80px" : "120px 48px 48px",
             }}
           >
             <div
               style={{
                 display: "flex",
-                gap: 64,
+                flexDirection: isMobile ? "column" : "row",
+                gap: isMobile ? 24 : 64,
                 alignItems: "center",
                 maxWidth: 1100,
                 width: "100%",
               }}
             >
               {/* Left — Device Mockup */}
-              <div style={{ flex: "0 0 45%", position: "relative" }}>
+              <div style={{ flex: isMobile ? "0 0 auto" : "0 0 45%", width: isMobile ? "100%" : "auto", position: "relative" }}>
                 <div
                   style={{
                     background: "#1a1a1a",
@@ -865,7 +985,7 @@ function ProcessSection() {
                         ? `url(${step.img}) center/cover no-repeat${step.img.endsWith(".png") ? ", #FFFFFF" : ""}`
                         : step.gradient,
                       borderRadius: "8px 8px 0 0",
-                      height: 300,
+                      height: isMobile ? 180 : 300,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -917,6 +1037,7 @@ function ProcessSection() {
                   </div>
                 </div>
 
+                {!isMobile && (
                 <div
                   style={{
                     position: "absolute",
@@ -956,10 +1077,11 @@ function ProcessSection() {
                     </div>
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Right — Text */}
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, width: isMobile ? "100%" : "auto" }}>
                 <div
                   style={{
                     fontSize: 11,
@@ -976,7 +1098,7 @@ function ProcessSection() {
                 <div
                   style={{
                     fontFamily: FONT,
-                    fontSize: 36,
+                    fontSize: isMobile ? 24 : 36,
                     fontWeight: 700,
                     color: COLORS.navy,
                     lineHeight: 1.2,
@@ -1006,11 +1128,11 @@ function ProcessSection() {
         <div
           style={{
             position: "absolute",
-            bottom: 48,
+            bottom: isMobile ? 24 : 48,
             left: "50%",
             transform: "translateX(-50%)",
             display: "flex",
-            gap: 24,
+            gap: isMobile ? 12 : 24,
             alignItems: "center",
           }}
         >
@@ -1025,7 +1147,7 @@ function ProcessSection() {
                   transition: "all 0.5s ease",
                 }}
               />
-              {activeStep === i && (
+              {activeStep === i && !isMobile && (
                 <span
                   style={{
                     fontSize: 10,
@@ -1083,11 +1205,12 @@ const CLIENT_LOGOS = [
 ];
 
 function LogoCarousel() {
+  const { isMobile } = useBreakpoint();
   return (
     <section
       style={{
         background: COLORS.navy,
-        padding: "64px 0 56px",
+        padding: isMobile ? "48px 0 40px" : "64px 0 56px",
         position: "relative",
       }}
     >
@@ -1116,7 +1239,7 @@ function LogoCarousel() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 120,
+            gap: isMobile ? 56 : 120,
             width: "max-content",
             animation: "logoScroll 25s linear infinite",
           }}
@@ -1128,7 +1251,7 @@ function LogoCarousel() {
               src={`/images/logos/${logo}`}
               alt={logo.replace("logo-", "").replace(".png", "")}
               style={{
-                height: 84,
+                height: isMobile ? 52 : 84,
                 width: "auto",
                 filter: "grayscale(1) brightness(1.5)",
                 opacity: 0.6,
@@ -1149,6 +1272,7 @@ function LogoCarousel() {
 // SERVICES
 // ============================================================
 function ServicesSection() {
+  const { isMobile } = useBreakpoint();
   const [ref, inView] = useInView(0.1);
   const [hoveredService, setHoveredService] = useState<number | null>(null);
 
@@ -1197,7 +1321,7 @@ function ServicesSection() {
       ref={ref as React.Ref<HTMLElement>}
       style={{
         background: COLORS.navy,
-        padding: "120px 48px",
+        padding: isMobile ? "80px 20px" : "120px 48px",
         position: "relative",
       }}
     >
@@ -1205,8 +1329,8 @@ function ServicesSection() {
         style={{
           position: "absolute",
           top: 0,
-          left: 48,
-          right: 48,
+          left: isMobile ? 20 : 48,
+          right: isMobile ? 20 : 48,
           height: 1,
           background: COLORS.navyLight,
         }}
@@ -1218,7 +1342,7 @@ function ServicesSection() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-end",
-            marginBottom: 80,
+            marginBottom: isMobile ? 48 : 80,
           }}
         >
           <div>
@@ -1238,7 +1362,7 @@ function ServicesSection() {
             <div
               style={{
                 fontFamily: FONT,
-                fontSize: 48,
+                fontSize: isMobile ? 32 : 48,
                 fontWeight: 300,
                 color: COLORS.white,
                 lineHeight: 1.2,
@@ -1258,11 +1382,12 @@ function ServicesSection() {
               onMouseEnter={() => setHoveredService(i)}
               onMouseLeave={() => setHoveredService(null)}
               style={{
-                padding: "36px 0",
+                padding: isMobile ? "24px 0" : "36px 0",
                 borderTop: `1px solid ${COLORS.navyLight}`,
                 display: "flex",
-                alignItems: "center",
-                gap: 40,
+                flexDirection: isMobile ? "column" : "row",
+                alignItems: isMobile ? "flex-start" : "center",
+                gap: isMobile ? 12 : 40,
                 cursor: "pointer",
                 transition: "all 0.4s ease",
                 opacity: inView ? 1 : 0,
@@ -1275,7 +1400,7 @@ function ServicesSection() {
                   fontFamily: FONT,
                   fontSize: 12,
                   fontWeight: 500,
-                  color: hoveredService === i ? COLORS.accent : COLORS.grey,
+                  color: isMobile || hoveredService === i ? COLORS.accent : COLORS.grey,
                   letterSpacing: 2,
                   minWidth: 40,
                   transition: "color 0.3s ease",
@@ -1286,11 +1411,11 @@ function ServicesSection() {
               <span
                 style={{
                   fontFamily: FONT,
-                  fontSize: 28,
+                  fontSize: isMobile ? 22 : 28,
                   fontWeight: 700,
-                  color: hoveredService === i ? COLORS.white : COLORS.greyDark,
+                  color: isMobile || hoveredService === i ? COLORS.white : COLORS.greyDark,
                   transition: "color 0.3s ease",
-                  minWidth: 300,
+                  minWidth: isMobile ? 0 : 300,
                 }}
               >
                 {s.title}
@@ -1303,13 +1428,13 @@ function ServicesSection() {
                   color: COLORS.grey,
                   lineHeight: 1.7,
                   flex: 1,
-                  opacity: hoveredService === i ? 1 : 0.6,
+                  opacity: isMobile || hoveredService === i ? 1 : 0.6,
                   transition: "opacity 0.3s ease",
                 }}
               >
                 {s.desc}
               </span>
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
                 {s.tags.map((t, j) => (
                   <span
                     key={j}
@@ -1322,7 +1447,7 @@ function ServicesSection() {
                       fontFamily: FONT,
                       fontWeight: 500,
                       textTransform: "uppercase",
-                      opacity: hoveredService === i ? 1 : 0.4,
+                      opacity: isMobile || hoveredService === i ? 1 : 0.4,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -1343,6 +1468,7 @@ function ServicesSection() {
 // PROJECTS / REFERENCES
 // ============================================================
 function ProjectsSection() {
+  const { isMobile } = useBreakpoint();
   const [ref, inView] = useInView(0.1);
   const [activeProject, setActiveProject] = useState(0);
 
@@ -1427,17 +1553,17 @@ function ProjectsSection() {
       ref={ref as React.Ref<HTMLElement>}
       style={{
         background: COLORS.offWhite,
-        padding: "120px 0",
+        padding: isMobile ? "80px 0" : "120px 0",
         position: "relative",
       }}
     >
-      <div style={{ padding: "0 48px", maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ padding: isMobile ? "0 20px" : "0 48px", maxWidth: 1200, margin: "0 auto" }}>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-end",
-            marginBottom: 64,
+            marginBottom: isMobile ? 40 : 64,
           }}
         >
           <div>
@@ -1457,7 +1583,7 @@ function ProjectsSection() {
             <div
               style={{
                 fontFamily: FONT,
-                fontSize: 48,
+                fontSize: isMobile ? 32 : 48,
                 fontWeight: 300,
                 color: COLORS.navy,
               }}
@@ -1479,14 +1605,14 @@ function ProjectsSection() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 0, marginBottom: 48 }}>
+        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 0, marginBottom: isMobile ? 32 : 48 }}>
           {/* Left — Hero image with quarter timeline */}
           <div
             style={{
-              flex: "0 0 55%",
+              flex: isMobile ? "0 0 auto" : "0 0 55%",
               position: "relative",
               background: COLORS.navy,
-              minHeight: 440,
+              minHeight: isMobile ? 240 : 440,
               display: "flex",
               overflow: "hidden",
             }}
@@ -1510,6 +1636,7 @@ function ProjectsSection() {
             </div>
 
             {/* Quarter strips */}
+            {!isMobile && (
             <div style={{ display: "flex", height: "100%", position: "relative", zIndex: 2 }}>
               {proj.quarters.map((q, i) => (
                 <div
@@ -1549,18 +1676,20 @@ function ProjectsSection() {
                 </div>
               ))}
             </div>
+            )}
           </div>
 
           {/* Right — Info */}
           <div
             style={{
               flex: 1,
-              padding: "48px 48px",
+              padding: isMobile ? "28px 24px" : "48px 48px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
               border: `1px solid ${COLORS.greyLight}`,
-              borderLeft: "none",
+              borderLeft: isMobile ? `1px solid ${COLORS.greyLight}` : "none",
+              borderTop: isMobile ? "none" : `1px solid ${COLORS.greyLight}`,
             }}
           >
             <div>
@@ -1693,6 +1822,8 @@ function ProjectsSection() {
             display: "flex",
             gap: 0,
             borderTop: `1px solid ${COLORS.greyLight}`,
+            overflowX: isMobile ? "auto" : "visible",
+            scrollbarWidth: "none",
           }}
         >
           {projects.map((p, i) => (
@@ -1700,8 +1831,9 @@ function ProjectsSection() {
               key={i}
               onClick={() => setActiveProject(i)}
               style={{
-                flex: 1,
-                padding: "24px 20px",
+                flex: isMobile ? "0 0 auto" : 1,
+                minWidth: isMobile ? 140 : 0,
+                padding: isMobile ? "20px 16px" : "24px 20px",
                 cursor: "pointer",
                 borderRight:
                   i < projects.length - 1
@@ -1746,6 +1878,7 @@ function ProjectsSection() {
 // GLOBAL STATS
 // ============================================================
 function StatsSection() {
+  const { isMobile } = useBreakpoint();
   const [ref, inView] = useInView(0.3);
 
   const stats = [
@@ -1760,7 +1893,7 @@ function StatsSection() {
       ref={ref as React.Ref<HTMLElement>}
       style={{
         background: COLORS.navy,
-        padding: "100px 48px",
+        padding: isMobile ? "60px 20px" : "100px 48px",
         position: "relative",
       }}
     >
@@ -1768,9 +1901,10 @@ function StatsSection() {
         <div
           style={{
             display: "flex",
-            gap: 80,
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? 24 : 80,
             alignItems: "flex-start",
-            marginBottom: 80,
+            marginBottom: isMobile ? 40 : 80,
           }}
         >
           <div>
@@ -1790,7 +1924,7 @@ function StatsSection() {
             <div
               style={{
                 fontFamily: FONT,
-                fontSize: 56,
+                fontSize: isMobile ? 36 : 56,
                 fontWeight: 700,
                 color: COLORS.white,
                 lineHeight: 1.1,
@@ -1812,7 +1946,7 @@ function StatsSection() {
               color: COLORS.grey,
               lineHeight: 1.8,
               maxWidth: 400,
-              paddingTop: 40,
+              paddingTop: isMobile ? 0 : 40,
             }}
           >
             Specializujeme se výhradně na stavebnictví a development. Každý
@@ -1823,17 +1957,21 @@ function StatsSection() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
             gap: 0,
             borderTop: `1px solid ${COLORS.navyLight}`,
           }}
         >
-          {stats.map((s, i) => (
+          {stats.map((s, i) => {
+            const showRightBorder = isMobile ? i % 2 === 0 : i < 3;
+            const showBottomBorder = isMobile && i < 2;
+            return (
             <div
               key={i}
               style={{
-                padding: "48px 32px",
-                borderRight: i < 3 ? `1px solid ${COLORS.navyLight}` : "none",
+                padding: isMobile ? "28px 16px" : "48px 32px",
+                borderRight: showRightBorder ? `1px solid ${COLORS.navyLight}` : "none",
+                borderBottom: showBottomBorder ? `1px solid ${COLORS.navyLight}` : "none",
                 opacity: inView ? 1 : 0,
                 transform: inView ? "translateY(0)" : "translateY(30px)",
                 transition: "all 0.8s ease",
@@ -1843,7 +1981,7 @@ function StatsSection() {
               <div
                 style={{
                   fontFamily: FONT,
-                  fontSize: 48,
+                  fontSize: isMobile ? 32 : 48,
                   fontWeight: 700,
                   color: COLORS.accent,
                   marginBottom: 8,
@@ -1868,7 +2006,8 @@ function StatsSection() {
                 {s.label}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -1879,6 +2018,7 @@ function StatsSection() {
 // ABOUT — Text Reveal (Sticky Scroll)
 // ============================================================
 function AboutSection() {
+  const { isMobile } = useBreakpoint();
   const sectionRef = useRef<HTMLElement>(null);
   const [scrollPct, setScrollPct] = useState(0);
 
@@ -1917,7 +2057,7 @@ function AboutSection() {
           overflowX: "clip",
         }}
       >
-        <div style={{ maxWidth: 800, padding: "0 48px", overflowWrap: "break-word" }}>
+        <div style={{ maxWidth: 800, padding: isMobile ? "0 20px" : "0 48px", overflowWrap: "break-word" }}>
           <div
             style={{
               fontSize: 10,
@@ -1926,7 +2066,7 @@ function AboutSection() {
               textTransform: "uppercase",
               fontFamily: FONT,
               fontWeight: 500,
-              marginBottom: 40,
+              marginBottom: isMobile ? 24 : 40,
             }}
           >
             (O nás)
@@ -1934,9 +2074,9 @@ function AboutSection() {
           <div
             style={{
               fontFamily: FONT,
-              fontSize: 40,
+              fontSize: isMobile ? 24 : 40,
               fontWeight: 400,
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               overflowWrap: "break-word",
             }}
           >
@@ -1967,6 +2107,7 @@ function AboutSection() {
 // CONTACT / CTA
 // ============================================================
 function ContactSection() {
+  const { isMobile } = useBreakpoint();
   const [ref, inView] = useInView(0.2);
 
   return (
@@ -1975,7 +2116,7 @@ function ContactSection() {
       ref={ref as React.Ref<HTMLElement>}
       style={{
         background: COLORS.navyDark,
-        padding: "120px 48px",
+        padding: isMobile ? "80px 20px" : "120px 48px",
         position: "relative",
         textAlign: "center",
       }}
@@ -1984,8 +2125,8 @@ function ContactSection() {
         style={{
           position: "absolute",
           top: 0,
-          left: 48,
-          right: 48,
+          left: isMobile ? 20 : 48,
+          right: isMobile ? 20 : 48,
           height: 1,
           background: COLORS.navyLight,
         }}
@@ -2016,7 +2157,7 @@ function ContactSection() {
         <div
           style={{
             fontFamily: FONT,
-            fontSize: 52,
+            fontSize: isMobile ? 34 : 52,
             fontWeight: 300,
             color: COLORS.white,
             lineHeight: 1.2,
@@ -2122,15 +2263,19 @@ function ContactSection() {
 // FOOTER
 // ============================================================
 function Footer() {
+  const { isMobile } = useBreakpoint();
   return (
     <footer
       style={{
         background: COLORS.navyDark,
-        padding: "40px 48px",
+        padding: isMobile ? "28px 20px" : "40px 48px",
         borderTop: `1px solid ${COLORS.navyLight}`,
         display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        gap: isMobile ? 16 : 0,
         justifyContent: "space-between",
         alignItems: "center",
+        textAlign: "center",
       }}
     >
       <div

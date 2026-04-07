@@ -32,12 +32,26 @@ function useSmoothScroll() {
 }
 
 // Breakpoint hook — mobile-first responsive
+// isCompact = stack vertically (mobile + tablet portrait)
+// isTouch   = no real hover (most tablets / phones) — disables hover-required states
 function useBreakpoint() {
-  const [bp, setBp] = useState({ isMobile: false, isTablet: false });
+  const [bp, setBp] = useState({
+    isMobile: false,
+    isTablet: false,
+    isCompact: false,
+    isTouch: false,
+  });
   useEffect(() => {
     const update = () => {
       const w = window.innerWidth;
-      setBp({ isMobile: w < 768, isTablet: w >= 768 && w < 1024 });
+      const isMobile = w < 768;
+      const isTablet = w >= 768 && w < 1024;
+      setBp({
+        isMobile,
+        isTablet,
+        isCompact: isMobile || isTablet,
+        isTouch: window.matchMedia("(hover: none)").matches,
+      });
     };
     update();
     window.addEventListener("resize", update);
@@ -846,7 +860,7 @@ function HeroSection() {
 // SCROLL STORYTELLING — Process Wipe Section
 // ============================================================
 function ProcessSection() {
-  const { isMobile } = useBreakpoint();
+  const { isMobile, isCompact } = useBreakpoint();
   const sectionRef = useRef<HTMLElement>(null);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -956,21 +970,21 @@ function ProcessSection() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: isMobile ? "150px 20px 80px" : "120px 48px 48px",
+              padding: isMobile ? "150px 20px 80px" : isCompact ? "140px 40px 70px" : "120px 48px 48px",
             }}
           >
             <div
               style={{
                 display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                gap: isMobile ? 24 : 64,
+                flexDirection: isCompact ? "column" : "row",
+                gap: isMobile ? 24 : isCompact ? 36 : 64,
                 alignItems: "center",
                 maxWidth: 1100,
                 width: "100%",
               }}
             >
               {/* Left — Device Mockup */}
-              <div style={{ flex: isMobile ? "0 0 auto" : "0 0 45%", width: isMobile ? "100%" : "auto", position: "relative" }}>
+              <div style={{ flex: isCompact ? "0 0 auto" : "0 0 45%", width: isCompact ? "min(100%, 480px)" : "auto", position: "relative" }}>
                 <div
                   style={{
                     background: "#1a1a1a",
@@ -985,7 +999,7 @@ function ProcessSection() {
                         ? `url(${step.img}) center/cover no-repeat${step.img.endsWith(".png") ? ", #FFFFFF" : ""}`
                         : step.gradient,
                       borderRadius: "8px 8px 0 0",
-                      height: isMobile ? 180 : 300,
+                      height: isMobile ? 180 : isCompact ? 240 : 300,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1037,7 +1051,7 @@ function ProcessSection() {
                   </div>
                 </div>
 
-                {!isMobile && (
+                {!isCompact && (
                 <div
                   style={{
                     position: "absolute",
@@ -1081,7 +1095,7 @@ function ProcessSection() {
               </div>
 
               {/* Right — Text */}
-              <div style={{ flex: 1, width: isMobile ? "100%" : "auto" }}>
+              <div style={{ flex: 1, width: isCompact ? "100%" : "auto", maxWidth: isCompact ? 540 : "none" }}>
                 <div
                   style={{
                     fontSize: 11,
@@ -1098,7 +1112,7 @@ function ProcessSection() {
                 <div
                   style={{
                     fontFamily: FONT,
-                    fontSize: isMobile ? 24 : 36,
+                    fontSize: isMobile ? 24 : isCompact ? 30 : 36,
                     fontWeight: 700,
                     color: COLORS.navy,
                     lineHeight: 1.2,
@@ -1147,7 +1161,7 @@ function ProcessSection() {
                   transition: "all 0.5s ease",
                 }}
               />
-              {activeStep === i && !isMobile && (
+              {activeStep === i && !isCompact && (
                 <span
                   style={{
                     fontSize: 10,
@@ -1272,9 +1286,11 @@ function LogoCarousel() {
 // SERVICES
 // ============================================================
 function ServicesSection() {
-  const { isMobile } = useBreakpoint();
+  const { isMobile, isCompact, isTouch } = useBreakpoint();
   const [ref, inView] = useInView(0.1);
   const [hoveredService, setHoveredService] = useState<number | null>(null);
+  // On touch devices the hover state never fires — treat all rows as "revealed"
+  const revealAll = isTouch || isMobile;
 
   const services = [
     {
@@ -1382,12 +1398,12 @@ function ServicesSection() {
               onMouseEnter={() => setHoveredService(i)}
               onMouseLeave={() => setHoveredService(null)}
               style={{
-                padding: isMobile ? "24px 0" : "36px 0",
+                padding: isMobile ? "24px 0" : isCompact ? "30px 0" : "36px 0",
                 borderTop: `1px solid ${COLORS.navyLight}`,
                 display: "flex",
-                flexDirection: isMobile ? "column" : "row",
-                alignItems: isMobile ? "flex-start" : "center",
-                gap: isMobile ? 12 : 40,
+                flexDirection: isCompact ? "column" : "row",
+                alignItems: isCompact ? "flex-start" : "center",
+                gap: isMobile ? 12 : isCompact ? 16 : 40,
                 cursor: "pointer",
                 transition: "all 0.4s ease",
                 opacity: inView ? 1 : 0,
@@ -1400,7 +1416,7 @@ function ServicesSection() {
                   fontFamily: FONT,
                   fontSize: 12,
                   fontWeight: 500,
-                  color: isMobile || hoveredService === i ? COLORS.accent : COLORS.grey,
+                  color: revealAll || hoveredService === i ? COLORS.accent : COLORS.grey,
                   letterSpacing: 2,
                   minWidth: 40,
                   transition: "color 0.3s ease",
@@ -1413,9 +1429,9 @@ function ServicesSection() {
                   fontFamily: FONT,
                   fontSize: isMobile ? 22 : 28,
                   fontWeight: 700,
-                  color: isMobile || hoveredService === i ? COLORS.white : COLORS.greyDark,
+                  color: revealAll || hoveredService === i ? COLORS.white : COLORS.greyDark,
                   transition: "color 0.3s ease",
-                  minWidth: isMobile ? 0 : 300,
+                  minWidth: isCompact ? 0 : 300,
                 }}
               >
                 {s.title}
@@ -1428,7 +1444,7 @@ function ServicesSection() {
                   color: COLORS.grey,
                   lineHeight: 1.7,
                   flex: 1,
-                  opacity: isMobile || hoveredService === i ? 1 : 0.6,
+                  opacity: revealAll || hoveredService === i ? 1 : 0.6,
                   transition: "opacity 0.3s ease",
                 }}
               >
@@ -1447,7 +1463,7 @@ function ServicesSection() {
                       fontFamily: FONT,
                       fontWeight: 500,
                       textTransform: "uppercase",
-                      opacity: isMobile || hoveredService === i ? 1 : 0.4,
+                      opacity: revealAll || hoveredService === i ? 1 : 0.4,
                       transition: "opacity 0.3s ease",
                     }}
                   >
@@ -1468,7 +1484,7 @@ function ServicesSection() {
 // PROJECTS / REFERENCES
 // ============================================================
 function ProjectsSection() {
-  const { isMobile } = useBreakpoint();
+  const { isMobile, isCompact } = useBreakpoint();
   const [ref, inView] = useInView(0.1);
   const [activeProject, setActiveProject] = useState(0);
 
@@ -1605,14 +1621,14 @@ function ProjectsSection() {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 0, marginBottom: isMobile ? 32 : 48 }}>
+        <div style={{ display: "flex", flexDirection: isCompact ? "column" : "row", gap: 0, marginBottom: isMobile ? 32 : 48 }}>
           {/* Left — Hero image with quarter timeline */}
           <div
             style={{
-              flex: isMobile ? "0 0 auto" : "0 0 55%",
+              flex: isCompact ? "0 0 auto" : "0 0 55%",
               position: "relative",
               background: COLORS.navy,
-              minHeight: isMobile ? 240 : 440,
+              minHeight: isMobile ? 240 : isCompact ? 340 : 440,
               display: "flex",
               overflow: "hidden",
             }}
@@ -1636,7 +1652,7 @@ function ProjectsSection() {
             </div>
 
             {/* Quarter strips */}
-            {!isMobile && (
+            {!isCompact && (
             <div style={{ display: "flex", height: "100%", position: "relative", zIndex: 2 }}>
               {proj.quarters.map((q, i) => (
                 <div
@@ -1683,13 +1699,13 @@ function ProjectsSection() {
           <div
             style={{
               flex: 1,
-              padding: isMobile ? "28px 24px" : "48px 48px",
+              padding: isMobile ? "28px 24px" : isCompact ? "36px 32px" : "48px 48px",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
               border: `1px solid ${COLORS.greyLight}`,
-              borderLeft: isMobile ? `1px solid ${COLORS.greyLight}` : "none",
-              borderTop: isMobile ? "none" : `1px solid ${COLORS.greyLight}`,
+              borderLeft: isCompact ? `1px solid ${COLORS.greyLight}` : "none",
+              borderTop: isCompact ? "none" : `1px solid ${COLORS.greyLight}`,
             }}
           >
             <div>
@@ -1822,7 +1838,7 @@ function ProjectsSection() {
             display: "flex",
             gap: 0,
             borderTop: `1px solid ${COLORS.greyLight}`,
-            overflowX: isMobile ? "auto" : "visible",
+            overflowX: isCompact ? "auto" : "visible",
             scrollbarWidth: "none",
           }}
         >
@@ -1831,8 +1847,8 @@ function ProjectsSection() {
               key={i}
               onClick={() => setActiveProject(i)}
               style={{
-                flex: isMobile ? "0 0 auto" : 1,
-                minWidth: isMobile ? 140 : 0,
+                flex: isCompact ? "0 0 auto" : 1,
+                minWidth: isCompact ? 160 : 0,
                 padding: isMobile ? "20px 16px" : "24px 20px",
                 cursor: "pointer",
                 borderRight:

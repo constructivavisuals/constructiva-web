@@ -250,8 +250,10 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
           justifyContent: "space-between",
         }}
       >
-        <div
-          style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 12 }}
+        <button
+          type="button"
+          aria-label="Constructiva — zpět nahoru"
+          style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: 12, background: "transparent", border: "none", padding: 0 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >
           <Image
@@ -262,7 +264,7 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
             style={{}}
             priority
           />
-        </div>
+        </button>
 
         {/* Mobile hamburger button */}
         {isMobile && (
@@ -294,8 +296,9 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
         {!isMobile && (
         <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
           {links.map((l) => (
-            <span
+            <button
               key={l.id}
+              type="button"
               onClick={() => scrollTo(l.id)}
               style={{
                 fontFamily: FONT,
@@ -306,16 +309,19 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
                 textTransform: "uppercase",
                 cursor: "pointer",
                 transition: "color 0.3s ease",
+                background: "transparent",
+                border: "none",
+                padding: "8px 4px",
               }}
               onMouseEnter={(e) =>
-                ((e.target as HTMLElement).style.color = COLORS.white)
+                (e.currentTarget.style.color = COLORS.white)
               }
               onMouseLeave={(e) =>
-                ((e.target as HTMLElement).style.color = COLORS.grey)
+                (e.currentTarget.style.color = COLORS.grey)
               }
             >
               {l.label}
-            </span>
+            </button>
           ))}
           <a
             href="https://constructiva-portal.vercel.app/"
@@ -336,12 +342,12 @@ function Navigation({ scrollTo }: { scrollTo: (id: string) => void }) {
               textDecoration: "none",
             }}
             onMouseEnter={(e) => {
-              (e.target as HTMLElement).style.background = "transparent";
-              (e.target as HTMLElement).style.color = COLORS.accent;
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = COLORS.accent;
             }}
             onMouseLeave={(e) => {
-              (e.target as HTMLElement).style.background = COLORS.accent;
-              (e.target as HTMLElement).style.color = COLORS.navy;
+              e.currentTarget.style.background = COLORS.accent;
+              e.currentTarget.style.color = COLORS.navy;
             }}
           >
             Klientský portál
@@ -818,7 +824,7 @@ function HeroSection() {
             transition: "opacity 0.15s linear",
           }}
         >
-          <div
+          <h1
             style={{
               fontFamily: FONT,
               fontSize: isMobile ? 36 : 64,
@@ -826,6 +832,7 @@ function HeroSection() {
               color: COLORS.white,
               lineHeight: 1.15,
               maxWidth: 600,
+              margin: 0,
             }}
           >
             Stavíme viditelnost
@@ -833,7 +840,7 @@ function HeroSection() {
             <span style={{ color: COLORS.accent, fontWeight: 700 }}>
               vašich projektů
             </span>
-          </div>
+          </h1>
           <div
             style={{
               fontFamily: FONT,
@@ -931,18 +938,19 @@ function ProcessSection() {
       >
         {/* Section label */}
         <div style={{ position: "absolute", top: isMobile ? 90 : 120, left: isMobile ? 20 : 48, right: isMobile ? 20 : "auto", zIndex: 10 }}>
-          <div
+          <h2
             style={{
               fontFamily: FONT,
               fontSize: isMobile ? 26 : 42,
               fontWeight: 700,
               color: COLORS.navy,
               lineHeight: 1.2,
+              margin: 0,
               marginBottom: 8,
             }}
           >
             Od vize k realitě
-          </div>
+          </h2>
           <div
             style={{
               fontSize: 12,
@@ -1109,18 +1117,19 @@ function ProcessSection() {
                 >
                   Krok {step.num}
                 </div>
-                <div
+                <h3
                   style={{
                     fontFamily: FONT,
                     fontSize: isMobile ? 24 : isCompact ? 30 : 36,
                     fontWeight: 700,
                     color: COLORS.navy,
                     lineHeight: 1.2,
+                    margin: 0,
                     marginBottom: 20,
                   }}
                 >
                   {step.title}
-                </div>
+                </h3>
                 <div
                   style={{
                     fontFamily: FONT,
@@ -1207,21 +1216,22 @@ function ProcessSection() {
 // ============================================================
 // LOGO CAROUSEL — Trusted By
 // ============================================================
-const CLIENT_LOGOS = [
-  "logo-bosch.png",
-  "logo-nexen.png",
-  "logo-skoda.png",
-  "logo-jipocar.png",
-  "logo-apeltauer.png",
-  "logo-kerosin.png",
-  "logo-niersberger.png",
-  "logo-kerous.png",
+const CLIENT_LOGOS: { file: string; name: string }[] = [
+  { file: "logo-bosch.png", name: "Bosch" },
+  { file: "logo-nexen.png", name: "Nexen Tire" },
+  { file: "logo-skoda.png", name: "Škoda" },
+  { file: "logo-jipocar.png", name: "Jipocar Transport" },
+  { file: "logo-apeltauer.png", name: "Apeltauer" },
+  { file: "logo-kerosin.png", name: "Kerosin" },
+  { file: "logo-niersberger.png", name: "Niersberger" },
+  { file: "logo-kerous.png", name: "Kerous" },
 ];
 
 function LogoCarousel() {
   const { isMobile } = useBreakpoint();
   return (
     <section
+      aria-label={`Klienti, kteří nám důvěřují: ${CLIENT_LOGOS.map((l) => l.name).join(", ")}`}
       style={{
         background: COLORS.navy,
         padding: isMobile ? "48px 0 40px" : "64px 0 56px",
@@ -1248,7 +1258,7 @@ function LogoCarousel() {
       >
         (Důvěřují nám)
       </div>
-      <div style={{ overflow: "hidden" }}>
+      <div style={{ overflow: "hidden" }} aria-hidden="true">
         <div
           style={{
             display: "flex",
@@ -1262,8 +1272,8 @@ function LogoCarousel() {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={i}
-              src={`/images/logos/${logo}`}
-              alt={logo.replace("logo-", "").replace(".png", "")}
+              src={`/images/logos/${logo.file}`}
+              alt=""
               style={{
                 height: isMobile ? 52 : 84,
                 width: "auto",
@@ -1272,8 +1282,8 @@ function LogoCarousel() {
                 transition: "opacity 0.3s ease",
                 flexShrink: 0,
               }}
-              onMouseEnter={(e) => ((e.target as HTMLElement).style.opacity = "1")}
-              onMouseLeave={(e) => ((e.target as HTMLElement).style.opacity = "0.6")}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.6")}
             />
           ))}
         </div>
@@ -1286,11 +1296,8 @@ function LogoCarousel() {
 // SERVICES
 // ============================================================
 function ServicesSection() {
-  const { isMobile, isCompact, isTouch } = useBreakpoint();
+  const { isMobile, isCompact } = useBreakpoint();
   const [ref, inView] = useInView(0.1);
-  const [hoveredService, setHoveredService] = useState<number | null>(null);
-  // On touch devices the hover state never fires — treat all rows as "revealed"
-  const revealAll = isTouch || isMobile;
 
   const services = [
     {
@@ -1375,19 +1382,20 @@ function ServicesSection() {
             >
               (Služby)
             </div>
-            <div
+            <h2
               style={{
                 fontFamily: FONT,
                 fontSize: isMobile ? 32 : 48,
                 fontWeight: 300,
                 color: COLORS.white,
                 lineHeight: 1.2,
+                margin: 0,
               }}
             >
               Co pro vás
               <br />
               <span style={{ fontWeight: 700, color: COLORS.accent }}>děláme</span>
-            </div>
+            </h2>
           </div>
         </div>
 
@@ -1395,8 +1403,6 @@ function ServicesSection() {
           {services.map((s, i) => (
             <div
               key={i}
-              onMouseEnter={() => setHoveredService(i)}
-              onMouseLeave={() => setHoveredService(null)}
               style={{
                 padding: isMobile ? "24px 0" : isCompact ? "30px 0" : "36px 0",
                 borderTop: `1px solid ${COLORS.navyLight}`,
@@ -1404,10 +1410,9 @@ function ServicesSection() {
                 flexDirection: isCompact ? "column" : "row",
                 alignItems: isCompact ? "flex-start" : "center",
                 gap: isMobile ? 12 : isCompact ? 16 : 40,
-                cursor: "pointer",
-                transition: "all 0.4s ease",
                 opacity: inView ? 1 : 0,
                 transform: inView ? "translateY(0)" : "translateY(30px)",
+                transition: "all 0.6s ease",
                 transitionDelay: `${i * 0.1}s`,
               }}
             >
@@ -1416,43 +1421,41 @@ function ServicesSection() {
                   fontFamily: FONT,
                   fontSize: 12,
                   fontWeight: 500,
-                  color: revealAll || hoveredService === i ? COLORS.accent : COLORS.grey,
+                  color: COLORS.accent,
                   letterSpacing: 2,
                   minWidth: 40,
-                  transition: "color 0.3s ease",
                 }}
               >
                 {s.num}
               </span>
-              <span
+              <h3
                 style={{
                   fontFamily: FONT,
                   fontSize: isMobile ? 22 : 28,
                   fontWeight: 700,
-                  color: revealAll || hoveredService === i ? COLORS.white : COLORS.greyDark,
-                  transition: "color 0.3s ease",
+                  color: COLORS.white,
                   minWidth: isCompact ? 0 : 300,
+                  margin: 0,
                 }}
               >
                 {s.title}
-              </span>
-              <span
+              </h3>
+              <p
                 style={{
                   fontFamily: FONT,
                   fontSize: 14,
                   fontWeight: 400,
-                  color: COLORS.grey,
+                  color: COLORS.greyLight,
                   lineHeight: 1.7,
                   flex: 1,
-                  opacity: revealAll || hoveredService === i ? 1 : 0.6,
-                  transition: "opacity 0.3s ease",
+                  margin: 0,
                 }}
               >
                 {s.desc}
-              </span>
-              <div style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap" }}>
+              </p>
+              <ul style={{ display: "flex", gap: 8, flexShrink: 0, flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0 }}>
                 {s.tags.map((t, j) => (
-                  <span
+                  <li
                     key={j}
                     style={{
                       fontSize: 10,
@@ -1463,14 +1466,12 @@ function ServicesSection() {
                       fontFamily: FONT,
                       fontWeight: 500,
                       textTransform: "uppercase",
-                      opacity: revealAll || hoveredService === i ? 1 : 0.4,
-                      transition: "opacity 0.3s ease",
                     }}
                   >
                     {t}
-                  </span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           ))}
           <div style={{ borderTop: `1px solid ${COLORS.navyLight}` }} />
@@ -1596,16 +1597,17 @@ function ProjectsSection() {
             >
               (Reference)
             </div>
-            <div
+            <h2
               style={{
                 fontFamily: FONT,
                 fontSize: isMobile ? 32 : 48,
                 fontWeight: 300,
                 color: COLORS.navy,
+                margin: 0,
               }}
             >
               Vybrané <span style={{ fontWeight: 700 }}>projekty</span>
-            </div>
+            </h2>
           </div>
           <div
             style={{
@@ -1735,18 +1737,19 @@ function ProjectsSection() {
                   </span>
                 ))}
               </div>
-              <div
+              <h3
                 style={{
                   fontFamily: FONT,
                   fontSize: 28,
                   fontWeight: 700,
                   color: COLORS.navy,
                   lineHeight: 1.2,
+                  margin: 0,
                   marginBottom: 12,
                 }}
               >
                 {proj.name}
-              </div>
+              </h3>
               <div
                 style={{
                   fontFamily: FONT,
@@ -1843,9 +1846,12 @@ function ProjectsSection() {
           }}
         >
           {projects.map((p, i) => (
-            <div
+            <button
               key={i}
+              type="button"
               onClick={() => setActiveProject(i)}
+              aria-pressed={activeProject === i}
+              aria-label={`Zobrazit projekt ${p.name}`}
               style={{
                 flex: isCompact ? "0 0 auto" : 1,
                 minWidth: isCompact ? 160 : 0,
@@ -1855,8 +1861,13 @@ function ProjectsSection() {
                   i < projects.length - 1
                     ? `1px solid ${COLORS.greyLight}`
                     : "none",
+                borderTop: "none",
+                borderLeft: "none",
+                borderBottom: "none",
                 background: activeProject === i ? COLORS.navy : "transparent",
                 transition: "all 0.4s ease",
+                textAlign: "left",
+                font: "inherit",
               }}
             >
               <div
@@ -1882,7 +1893,7 @@ function ProjectsSection() {
               >
                 {p.name}
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -1937,7 +1948,7 @@ function StatsSection() {
             >
               (Proč my)
             </div>
-            <div
+            <h2
               style={{
                 fontFamily: FONT,
                 fontSize: isMobile ? 36 : 56,
@@ -1945,6 +1956,7 @@ function StatsSection() {
                 color: COLORS.white,
                 lineHeight: 1.1,
                 textTransform: "uppercase",
+                margin: 0,
               }}
             >
               Čísla
@@ -1952,7 +1964,7 @@ function StatsSection() {
               mluví
               <br />
               za nás
-            </div>
+            </h2>
           </div>
           <div
             style={{
@@ -2087,13 +2099,14 @@ function AboutSection() {
           >
             (O nás)
           </div>
-          <div
+          <h2
             style={{
               fontFamily: FONT,
               fontSize: isMobile ? 24 : 40,
               fontWeight: 400,
               lineHeight: 1.5,
               overflowWrap: "break-word",
+              margin: 0,
             }}
           >
             {words.map((word, i) => {
@@ -2112,7 +2125,7 @@ function AboutSection() {
                 </span>
               );
             })}
-          </div>
+          </h2>
         </div>
       </div>
     </section>
@@ -2170,13 +2183,14 @@ function ContactSection() {
         >
           (Kontakt)
         </div>
-        <div
+        <h2
           style={{
             fontFamily: FONT,
             fontSize: isMobile ? 34 : 52,
             fontWeight: 300,
             color: COLORS.white,
             lineHeight: 1.2,
+            margin: 0,
             marginBottom: 24,
           }}
         >
@@ -2184,7 +2198,7 @@ function ContactSection() {
           <span style={{ fontWeight: 700, color: COLORS.accent }}>
             spolupracovat
           </span>
-        </div>
+        </h2>
         <div
           style={{
             fontFamily: FONT,
@@ -2245,10 +2259,17 @@ function ContactSection() {
           </a>
         </div>
 
-        <div style={{ display: "flex", gap: 32, justifyContent: "center" }}>
-          {["Instagram", "LinkedIn", "Facebook"].map((s) => (
-            <span
-              key={s}
+        <nav aria-label="Sociální sítě" style={{ display: "flex", gap: 32, justifyContent: "center" }}>
+          {[
+            { label: "Instagram", href: "https://instagram.com/constructiva.cz" },
+            { label: "LinkedIn", href: "https://linkedin.com/company/constructiva" },
+            { label: "Facebook", href: "https://facebook.com/constructiva.cz" },
+          ].map((s) => (
+            <a
+              key={s.label}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 fontSize: 11,
                 letterSpacing: 2,
@@ -2256,20 +2277,25 @@ function ContactSection() {
                 fontFamily: FONT,
                 fontWeight: 500,
                 textTransform: "uppercase",
+                textDecoration: "none",
                 cursor: "pointer",
                 transition: "color 0.3s ease",
+                padding: "8px 4px",
+                minHeight: 44,
+                display: "inline-flex",
+                alignItems: "center",
               }}
               onMouseEnter={(e) =>
-                ((e.target as HTMLElement).style.color = COLORS.accent)
+                (e.currentTarget.style.color = COLORS.accent)
               }
               onMouseLeave={(e) =>
-                ((e.target as HTMLElement).style.color = COLORS.grey)
+                (e.currentTarget.style.color = COLORS.grey)
               }
             >
-              {s}
-            </span>
+              {s.label}
+            </a>
           ))}
-        </div>
+        </nav>
       </div>
     </section>
   );
@@ -2346,14 +2372,37 @@ export default function ConstructivaHomepage() {
           transition: "opacity 0.8s ease 0.3s",
         }}
       >
+        <a
+          href="#main"
+          style={{
+            position: "absolute",
+            left: -9999,
+            top: 8,
+            zIndex: 200,
+            padding: "10px 16px",
+            background: COLORS.accent,
+            color: COLORS.navy,
+            fontFamily: FONT,
+            fontWeight: 600,
+            fontSize: 13,
+            textDecoration: "none",
+            borderRadius: 4,
+          }}
+          onFocus={(e) => (e.currentTarget.style.left = "8px")}
+          onBlur={(e) => (e.currentTarget.style.left = "-9999px")}
+        >
+          Přeskočit na obsah
+        </a>
         <Navigation scrollTo={scrollTo} />
-        <HeroSection />
-        <ProcessSection />
-        <LogoCarousel />
-        <ServicesSection />
-        <ProjectsSection />
-        <StatsSection />
-        <AboutSection />
+        <main id="main">
+          <HeroSection />
+          <ProcessSection />
+          <LogoCarousel />
+          <ServicesSection />
+          <ProjectsSection />
+          <StatsSection />
+          <AboutSection />
+        </main>
         <ContactSection />
         <Footer />
       </div>
